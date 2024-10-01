@@ -11,7 +11,11 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-color: #666666;
+        background-color: #51A6FA;
+    }
+    .stAlert {
+        background-color: #E9E9E9;
+        color: #FFFFFF; /* White text */
     }
     </style>
     """,
@@ -28,7 +32,7 @@ st.title("Create Shared Cart")
 
 # Input fields
 name = st.text_input("Shared Cart Name", value=generate_random_name())
-description = st.text_input("Shared Cart Description")
+description = st.text_input("Shared Cart Description (optional)")
 description_url = st.text_input("Shared Cart Description URL (optional)")
 
 # File uploader
@@ -56,8 +60,8 @@ if st.button("Create Shared Cart"):
         try:
             nbia.makeSharedCart(series_list, name, description, description_url)
 
-            st.success("Shared Cart created successfully!")
-            st.markdown(f"https://nbia.cancerimagingarchive.net/nbia-search/?saved-cart={name}")
+            st.success(f"Shared Cart created successfully!\n\nhttps://nbia.cancerimagingarchive.net/nbia-search/?saved-cart={name}")
+            #st.markdown(f"https://nbia.cancerimagingarchive.net/nbia-search/?saved-cart={name}")
         except Exception as e:
             st.error(f"Failed to create Shared Cart: {str(e)}")
     else:
