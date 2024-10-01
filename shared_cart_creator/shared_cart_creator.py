@@ -3,6 +3,21 @@ import pandas as pd
 import random
 from tcia_utils import nbia
 
+# Display the banner image
+st.image("https://www.cancerimagingarchive.net/wp-content/uploads/2021/06/TCIA-Logo-01.png", use_column_width=True)
+
+# Inject CSS to style the background image
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #666666;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Function to generate a random name
 def generate_random_name():
     random_numbers = ''.join([str(random.randint(0, 9)) for _ in range(18)])
