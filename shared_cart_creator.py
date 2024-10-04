@@ -31,16 +31,17 @@ def generate_random_name():
     random_numbers = ''.join([str(random.randint(0, 9)) for _ in range(18)])
     return f"nbia-{random_numbers}"
 
-# Streamlit app
+# tcia logo
 st.image("https://www.cancerimagingarchive.net/wp-content/uploads/2021/06/TCIA-Logo-01.png", use_column_width=True)
+
+# Streamlit app
 st.title("Create Shared Cart")
 
 # User login
-st.sidebar.header('Login')
+st.sidebar.header('Login (optional)')
+st.sidebar.markdown("Enter credentials before pressing 'Create Shared Cart' if your dataset contains restricted series.")
 user = st.sidebar.text_input('Username')
 pw = st.sidebar.text_input('Password', type='password')
-
-st.markdown("If you want to create a cart that contains restricted series, you must enter your credentials in the left sidebar before pushing the 'Create Shared Cart' button.")
 
 st.markdown("If you upload a spreadsheet it will search for **Series UID** or **SeriesInstanceUID** column headers and use that column, otherwise it will assume there are no headers and use the first column.")
 
