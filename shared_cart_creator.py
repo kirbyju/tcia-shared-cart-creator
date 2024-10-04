@@ -3,9 +3,6 @@ import pandas as pd
 import random
 from tcia_utils import nbia
 
-# Display the banner image
-st.image("https://www.cancerimagingarchive.net/wp-content/uploads/2021/06/TCIA-Logo-01.png", use_column_width=True)
-
 # Inject CSS to style for both light and dark mode
 st.markdown(
     """
@@ -35,7 +32,13 @@ def generate_random_name():
     return f"nbia-{random_numbers}"
 
 # Streamlit app
+st.image("https://www.cancerimagingarchive.net/wp-content/uploads/2021/06/TCIA-Logo-01.png", use_column_width=True)
 st.title("Create Shared Cart")
+
+# User login
+st.sidebar.header('Login')
+user = st.sidebar.text_input('Username')
+pw = st.sidebar.text_input('Password', type='password')
 
 # Input fields
 name = st.text_input("Shared Cart Name", value=generate_random_name())
@@ -50,29 +53,31 @@ uploaded_file = st.file_uploader("Upload TXT, CSV, XLSX, or TCIA manifest file c
 
 st.markdown("**Note:** If you upload a spreadsheet it will use the **SeriesInstanceUID** column if it exists, otherwise it will assume there are no headers and use the first column.")
 
-def read_tcia_file(file):
-    series_list = []
-    lines = file.readlines()[6:]
-    for line in lines:
-        series_list.append(line.decode('utf-8').strip())
-    return series_list
-
 if st.button("Create Shared Cart"):
     if uploaded_file is not None:
         series_list = []
-        if uploaded_file.name.endswith("tcia"):
-            series_list = read_tcia_file(uploaded_file)
+        # create df based on file type
+        if uploaded_file.name.endswith("xlsx"):
+            df = pd.read_excel(uploaded_file)
         elif uploaded_file.name.endswith("csv"):
             df = pd.read_csv(uploaded_file)
-            series_list = df['SeriesInstanceUID'].tolist() if 'SeriesInstanceUID' in df.columns else df.iloc[:, 0].tolist()
-        elif uploaded_file.name.endswith("xlsx"):
-            df = pd.read_excel(uploaded_file)
-            series_list = df['SeriesInstanceUID'].tolist() if 'SeriesInstanceUID' in df.columns else df.iloc[:, 0].tolist()
         else:
             df = pd.read_csv(uploaded_file, delimiter="\t")
-            series_list = df['SeriesInstanceUID'].tolist() if 'SeriesInstanceUID' in df.columns else df.iloc[:, 0].tolist()
-
+        # create uid list based on df contents
+        if 'Series UID' in df.columns and 'SeriesInstanceUID' in df.columns:
+            raise ValueError("Invalid spreadsheet: both 'Series UID' and 'SeriesInstanceUID' are present.")
+        elif 'SeriesInstanceUID' in df.columns:
+            series_list = df['SeriesInstanceUID'].tolist()
+        elif 'Series UID' in df.columns:
+            series_list = df['Series UID'].tolist()
+        elif uploaded_file.name.endswith("tcia"):
+            # drop config params and keep series list
+            series_list = df.iloc[5:, 0].tolist()
+        else:
+            series_list = df.iloc[:, 0].tolist()
+        # submit list for shared list creation
         try:
+            nbia.getToken(user, pw)
             nbia.makeSharedCart(series_list, name, description, description_url)
             st.success(f"Shared Cart created successfully!\n\nhttps://nbia.cancerimagingarchive.net/nbia-search/?saved-cart={name}")
         except Exception as e:
