@@ -36,7 +36,7 @@ six==1.16.0
 smmap==5.0.1
 soupsieve==2.6
 streamlit==1.39.0
-tcia_utils==2.4.7
+tcia_utils==2.4.15
 tenacity==9.0.0
 toml==0.10.2
 tornado==6.4.1
