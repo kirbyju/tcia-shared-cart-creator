@@ -53,7 +53,7 @@ description = st.text_input("Shared Cart Description (optional)")
 description_url = st.text_input("Shared Cart Description URL (optional)")
 
 # Define the allowed file extensions
-allowed_extensions = ['tcia', 'txt', 'xlsx', 'csv']  # Add other extensions as needed
+allowed_extensions = ['tcia', 'txt', 'xlsx', 'csv']
 
 # File uploader
 uploaded_file = st.file_uploader("Upload TXT, CSV, XLSX, or TCIA manifest file containing your DICOM Series Instance UIDs.", type=allowed_extensions)
@@ -62,52 +62,46 @@ if st.button("Create Shared Cart"):
     if uploaded_file is not None:
         try:
             series_list = []
-            # create df based on file type
-            if uploaded_file.name.endswith("xlsx"):
-                df = pd.read_excel(uploaded_file)
-            elif uploaded_file.name.endswith("csv"):
-                df = pd.read_csv(uploaded_file)
+            # For text files, read all lines and strip whitespace
+            if uploaded_file.name.endswith(("txt", "tcia")):
+                series_list = [line.strip() for line in uploaded_file.getvalue().decode('utf-8').splitlines() if line.strip()]
             else:
-                df = pd.read_csv(uploaded_file, delimiter="\t")
-            # create uid list based on df contents
-            if 'Series UID' in df.columns and 'SeriesInstanceUID' in df.columns:
-                st.error("Invalid spreadsheet: both 'Series UID' and 'SeriesInstanceUID' are present.")
-            elif 'SeriesInstanceUID' in df.columns:
-                series_list = df['SeriesInstanceUID'].tolist()
-            elif 'Series UID' in df.columns:
-                series_list = df['Series UID'].tolist()
-            elif uploaded_file.name.endswith("tcia"):
-                # drop config params and keep series list
-                series_list = df.iloc[5:, 0].tolist()
-            else:
-                series_list = df.iloc[:, 0].tolist()
+                # create df based on file type
+                if uploaded_file.name.endswith("xlsx"):
+                    df = pd.read_excel(uploaded_file)
+                elif uploaded_file.name.endswith("csv"):
+                    df = pd.read_csv(uploaded_file)
+                else:
+                    df = pd.read_csv(uploaded_file, delimiter="\t")
+
+                # create uid list based on df contents
+                if 'Series UID' in df.columns and 'SeriesInstanceUID' in df.columns:
+                    st.error("Invalid spreadsheet: both 'Series UID' and 'SeriesInstanceUID' are present.")
+                elif 'SeriesInstanceUID' in df.columns:
+                    series_list = df['SeriesInstanceUID'].tolist()
+                elif 'Series UID' in df.columns:
+                    series_list = df['Series UID'].tolist()
+                elif uploaded_file.name.endswith("tcia"):
+                    # drop config params and keep series list
+                    series_list = df.iloc[5:, 0].tolist()
+                else:
+                    series_list = df.iloc[:, 0].tolist()
+
+            # Add debugging information
+            st.write(f"Total number of Series UIDs: {len(series_list)}")
 
             # Attempt login if user provided credentials
             if user and pw:
-                token_status = nbia.getToken(user, pw)
-                if token_status != 200:
-                    st.error(f"Login failed: Status code {token_status}. Check your credentials.")
+                token = nbia.getToken(user, pw)
+                if token.status != 200:
+                    st.error(f"Login failed: Status code {token.status}. Check your credentials.")
                     st.stop()
 
             # Attempt to create the cart
             result = nbia.makeSharedCart(series_list, name, description, description_url)
-            # Handle result status codes
-            if result == 200:
-                st.success(f"Shared Cart created successfully!\n\nhttps://nbia.cancerimagingarchive.net/nbia-search/?saved-cart={name}")
-            elif result == 400:
-                st.error("There was an issue with your request. Possible reasons: permission issues (try logging in!), bad formatting (see guidance above) or invalid Series UID.")
-            elif result == 401:
-                st.error("Unauthorized. Please check your login credentials.")
-            elif result == 403:
-                st.error("Access denied. Your account does not have permission to access some of the requested data.")
-            elif result == 404:
-                st.error("Resource not found. One or more Series UIDs may be invalid.")
-            elif result == 408:
-                st.error("Request timed out. Please try again.")
-            elif result == 502:
-                st.error("Connection error. Unable to reach the server. Please try again later.")
-            else:
-                st.error(f"Unknown error. Status code: {result}")
-
+            st.success(f"Shared Cart(s) created successfully!\n\n{result}")
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
+            # Optional: print full traceback for debugging
+            import traceback
+            st.error(traceback.format_exc())
