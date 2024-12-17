@@ -63,7 +63,7 @@ if st.button("Create Shared Cart"):
         try:
             series_list = []
             # For text files, read all lines and strip whitespace
-            if uploaded_file.name.endswith(("txt", "tcia")):
+            if uploaded_file.name.endswith(("txt")):
                 series_list = [line.strip() for line in uploaded_file.getvalue().decode('utf-8').splitlines() if line.strip()]
             else:
                 # create df based on file type
@@ -90,16 +90,19 @@ if st.button("Create Shared Cart"):
             # Add debugging information
             st.write(f"Total number of Series UIDs: {len(series_list)}")
 
-            # Attempt login if user provided credentials
-            if user and pw:
-                token = nbia.getToken(user, pw)
-                if token.status != 200:
-                    st.error(f"Login failed: Status code {token.status}. Check your credentials.")
-                    st.stop()
+            # status indicator
+            with st.spinner('Creating Shared Cart... Please wait'):
 
-            # Attempt to create the cart
-            result = nbia.makeSharedCart(series_list, name, description, description_url)
-            st.success(f"Shared Cart(s) created successfully!\n\n{result}")
+                # Attempt login if user provided credentials
+                if user and pw:
+                    token = nbia.getToken(user, pw)
+                    if token.status != 200:
+                        st.error(f"Login failed: Status code {token.status}. Check your credentials.")
+                        st.stop()
+
+                # Attempt to create the cart
+                result = nbia.makeSharedCart(series_list, name, description, description_url)
+                st.success(f"Shared Cart(s) created successfully!\n\n{result}")
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
             # Optional: print full traceback for debugging
