@@ -96,16 +96,21 @@ if st.button("Create Shared Cart"):
                 # Attempt login if user provided credentials
                 if user and pw:
                     st.write("Logging in with user credentials to include restricted data.")
-                    nbia.getToken(user, pw)
-                    #if token.status != 200:
-                    #    st.error(f"Login failed: Status code {token.status}. Check your credentials.")
-                    #    st.stop()
+                    token = nbia.getToken(user, pw, return_values=True)
+                    if token is None:
+                        st.error(f"Login failed. Please check your credentials.")
+                        st.stop()
+                    else:
+                        st.success("Login successful!")
 
                 # Attempt to create the cart
                 result = nbia.makeSharedCart(series_list, name, description, description_url)
-                st.success(f"Shared Cart(s) created successfully!\n\n{result}")
+                if not result:
+                    st.error("No shared cart URLs returned. Make sure your account has access to these series UIDs.")
+                else:
+                    st.success(f"Shared Cart(s) created successfully!\n\n{result}")
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+            st.error(f"Login failed: {error_message}")
             # Optional: print full traceback for debugging
             import traceback
             st.error(traceback.format_exc())
